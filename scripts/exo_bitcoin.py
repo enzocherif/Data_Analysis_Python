@@ -128,5 +128,67 @@ plt.grid(True, linestyle="--", alpha=0.5)
 plt.show()
 
 
+#Partie avec l'ethereum 
+file_path = r"C:\Users\enzoc\Desktop\Data_Analysis_Python\data_set\ETH-EUR.csv"
+try:    
+    ethereum = pd.read_csv(file_path, parse_dates=True, index_col='Date')
+    print("Fichier chargé avec succès !")
+except FileNotFoundError:
+    print(f"Erreur : Le fichier '{file_path}' est introuvable.")
+    exit()
+    
+# --- AFFICHAGE DU PRIX DE L'ETHEREUM EN 2019 ---
+plt.figure(figsize=(12, 6))
+ethereum.loc['2019', 'Close'].plot(label="Ethereum", color="orange")
+plt.title("Évolution du prix de l'Ethereum en 2019")
+plt.xlabel("Date")
+plt.ylabel("Prix de clôture (EUR)")
+plt.legend()
+plt.grid(True, linestyle="--", alpha=0.5)
+plt.show()
 
+# --- FUSION DES DATAFRAMES ---
+print("\n🔄 Fusion des DataFrames Bitcoin et Ethereum...")
+
+# Fusion avec INNER JOIN (Dates communes uniquement)
+btc_eth_inner = pd.merge(bitcoin, ethereum, on='Date', how='inner', suffixes=('_btc', '_eth'))
+print("\nDataFrame combiné (INNER JOIN) :")
+print(btc_eth_inner.head())
+
+# Fusion avec OUTER JOIN (Toutes les dates, même sans correspondance)
+btc_eth_outer = pd.merge(bitcoin, ethereum, on='Date', how='outer', suffixes=('_btc', '_eth'))
+print("\nDataFrame combiné (OUTER JOIN) :")
+print(btc_eth_outer.head())
+
+# --- VISUALISATION DES PRIX BTC ET ETH ---
+plt.figure(figsize=(12, 8))
+
+# Affichage des prix BTC et ETH sur des sous-graphiques
+btc_eth_inner[['Close_btc', 'Close_eth']].plot(subplots=True, figsize=(12, 8), title="Comparaison des prix BTC vs ETH")
+plt.tight_layout()
+plt.show()
+
+# --- CALCUL DE LA CORRÉLATION ENTRE BTC ET ETH ---
+correlation_matrix = btc_eth_inner[['Close_btc', 'Close_eth']].corr()
+print("\n📊 Matrice de corrélation entre BTC et ETH :")
+print(correlation_matrix)
+
+#Exercie strategie de la tortue
+# Initialisation des colonnes Buy et Sell
+bitcoin['Buy'] = np.zeros(len(bitcoin))
+bitcoin['Sell'] = np.zeros(len(bitcoin))
+
+# Boucle pour appliquer la stratégie de la tortue
+for i in range(28, len(bitcoin)):  # On commence à 28 pour éviter NaN dans rolling()
+    max_28 = bitcoin['Close'].rolling(window=28).max().iloc[i]
+    min_28 = bitcoin['Close'].rolling(window=28).min().iloc[i]
+    current_price = bitcoin['Close'].iloc[i]
+
+    if current_price > max_28:
+        bitcoin.at[i, 'Buy'] = 1  # Signal d'achat
+    elif current_price < min_28:
+        bitcoin.at[i, 'Sell'] = -1  # Signal de vente
+
+# Affichage des premières lignes pour vérifier
+print(bitcoin[['Close', 'Buy', 'Sell']].head(40))
 
